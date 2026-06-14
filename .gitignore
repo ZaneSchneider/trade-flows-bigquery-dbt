@@ -18,6 +18,7 @@ sa-*.json
 
 # === Local data lake / fetcher working files ===
 /data/
+data/
 
 # === dbt build artifacts (restore with `dbt deps` / `dbt build`) ===
 target/
