@@ -1,0 +1,61 @@
+models:
+  - name: stg_baci_country_codes
+    description: Staging model for BACI country codes
+    columns:
+
+      - name: country_code
+        tests:
+          - not_null
+          - unique
+
+      - name: country_name
+      - name: iso2
+      - name: iso3
+
+
+  - name: stg_baci_product_codes
+    description: Staging model for BACI product codes
+    columns:
+
+      - name: hs6_product_code
+        tests:
+          - not_null
+          - unique
+
+      - name: product_description
+
+
+  - name: stg_baci_trade
+    description: Staging model for BACI trade data
+    columns:
+
+      - name: year
+
+      - name: exporter_country_code
+        description: The NUMERIC code for the exporter country
+        tests:
+          - not_null
+
+      - name: importer_country_code
+        description: The NUMERIC code for the importer country
+        tests:
+          - not_null
+
+      - name: hs6_product_code
+        tests:
+          - not_null
+
+      - name: trade_value_thousands_usd
+        tests:
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0, inclusive: false}
+
+      - name: trade_quantity_metric_tons
+        description: The trade quantity in metric tons, can be null
+
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments: { expression: "regexp_contains(hs6_product_code, r'^[0-9]{6}$')" }
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [year, exporter_country_code, importer_country_code, hs6_product_code]

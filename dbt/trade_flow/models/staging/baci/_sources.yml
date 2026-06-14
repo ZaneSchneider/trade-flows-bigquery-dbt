@@ -1,0 +1,12 @@
+sources:
+  - name: trade_flow_v2_raw
+    database: trade-flow-analysis
+    schema: trade_flow_v2_raw
+    description: Raw data source for trade flow data
+    tables:
+      - name: baci_country_codes
+        description: Table containing BACI country codes
+      - name: baci_product_codes
+        description: Table containing BACI product codes
+      - name: baci_trade
+        description: Table containing BACI trade data
