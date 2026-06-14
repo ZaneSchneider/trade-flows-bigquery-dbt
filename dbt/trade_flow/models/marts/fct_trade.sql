@@ -1,5 +1,5 @@
 
--- each partition currently < 0.5 GB
+
 {{ config(
     partition_by={'field': 'year', 'data_type': 'int64',
                   'range': {'start': 1990, 'end': 2050, 'interval': 1}},
