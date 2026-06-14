@@ -1,0 +1,13 @@
+seeds:
+  - name: hs_sections
+    description: One row per HS2 chapter in BACI HS92; maps chapter to HS section + names.
+    config:
+      column_types:
+        hs2: string
+    columns:
+
+      - name: hs2
+        tests: [not_null, unique]
+        
+      - name: hs_section
+        tests: [not_null]
