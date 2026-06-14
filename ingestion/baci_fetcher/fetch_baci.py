@@ -4,14 +4,17 @@ import re
 from google.cloud import storage
 import os
 
-URL = "https://www.cepii.fr/DATA_DOWNLOAD/baci/data/BACI_HS92_V202601.zip"
+VERSION = "V202601"
+URL = f"https://www.cepii.fr/DATA_DOWNLOAD/baci/data/BACI_HS92_{VERSION}.zip"
 YEAR_START = 1995
 YEAR_END = 2024
 BUCKET_NAME = "trade-flow-analysis-raw"
+GCS_PREFIX = "baci"
 DATA_DIR = "./data"  
 
 
 def download_large_file(url, destination):
+    print("Downloading (This may take awhile)")
     try:
         with requests.get(url, stream=True) as response:
             response.raise_for_status()
@@ -51,8 +54,33 @@ def upload_blob(bucket, source_file_name, destination_blob_name):
         f"File {source_file_name} uploaded to {destination_blob_name}."
     )
 
+def expected_blob_names():
+    names = {
+        f"{GCS_PREFIX}/BACI_HS92_Y{year}_{VERSION}.csv"
+        for year in range(YEAR_START, YEAR_END + 1)
+    }
+    names.add(f"{GCS_PREFIX}/country_codes_{VERSION}.csv")
+    names.add(f"{GCS_PREFIX}/product_codes_HS92_{VERSION}.csv")
+    return names
+
+def already_in_gcs(bucket):
+    """True only if every expected file for this version is already in the bucket."""
+    expected = expected_blob_names()
+    existing = {b.name for b in bucket.list_blobs(prefix=f"{GCS_PREFIX}/")}
+    missing = expected - existing
+    if missing:
+        print(f"{len(missing)} of {len(expected)} {VERSION} files missing from GCS - fetching.")
+        return False
+    print(f"All {len(expected)} {VERSION} files already in GCS - skipping download.")
+    return True
 
 def main():
+
+    bucket = storage.Client().bucket(BUCKET_NAME)
+
+    if already_in_gcs(bucket):
+        print(f"Already in GCS Bucket")
+        return
 
     zip_path = os.path.join(DATA_DIR, "BACI_HS92_V202601.zip")
     extract_dir = os.path.join(DATA_DIR, "extracted")

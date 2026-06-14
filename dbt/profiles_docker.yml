@@ -1,0 +1,11 @@
+trade_flow_v2:
+  target: prod
+  outputs:
+    prod:
+      type: bigquery
+      method: service-account
+      project: trade-flow-analysis
+      dataset: trade_flow_v2
+      location: us-west1
+      threads: 4
+      keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS') }}"

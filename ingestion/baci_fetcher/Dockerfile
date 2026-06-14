@@ -6,7 +6,9 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# then app code
+# both the fetcher and the loader live in this one image
 COPY fetch_baci.py .
+COPY load_to_bigquery.py .
 
+# default command is the fetcher; the DAG overrides it for the load step
 CMD ["python", "fetch_baci.py"]
