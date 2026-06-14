@@ -1,0 +1,80 @@
+models:
+  - name: dim_country
+    description: >
+      Country dimension. Grain = one row per BACI numeric country_code.
+      ISO3 is NOT unique: historical entities (Belgium-Luxembourg, FRG,
+      pre-2011 Sudan) share an ISO3 with their modern successor, so
+      country_code is the only key.
+    columns:
+
+      - name: country_code
+        description: BACI numeric country code; the join key used by fct_trade.
+        tests:
+          - not_null
+          - unique
+
+      - name: iso3
+        tests:
+          - not_null
+
+      - name: country_name
+
+      - name: iso2
+
+
+  - name: dim_product
+    description: Product dimension. Grain = one row per HS6 product code.
+    columns:
+
+      - name: hs6_product_code
+        tests:
+          - not_null
+          - unique
+
+      - name: product_description
+
+
+  - name: fct_trade
+    description: >
+      Trade fact. Grain = one row per (year, exporter, importer, HS6 product).
+      Exporter/importer ISO3 are resolved from BACI numeric codes via dim_country.
+    columns:
+
+      - name: year
+
+      - name: exporter_iso3
+        description: Exporter ISO3, resolved from the numeric code via dim_country.
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_country')
+                field: iso3
+
+      - name: importer_iso3
+        description: Importer ISO3, resolved from the numeric code via dim_country.
+        tests:
+          - relationships:
+              arguments:
+                to: ref('dim_country')
+                field: iso3
+
+      - name: hs6_product_code
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_product')
+                field: hs6_product_code
+
+      - name: trade_value_thousands_usd
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments: {min_value: 0, inclusive: false}
+
+      - name: trade_quantity_metric_tons
+        description: Trade quantity in metric tons; nullable (BACI omits many quantities).
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [year, exporter_iso3, importer_iso3, hs6_product_code]
