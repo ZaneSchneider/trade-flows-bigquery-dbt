@@ -56,16 +56,15 @@ marts rolled up from it.
 
 | Mart | Grain |
 |---|---|
-| `mart_import_export_by_product_country` | country × product × year |
-| `mart_import_export_by_country` | country × year |
-| `mart_global_export_by_product` | product × year |
+| `mart_trade_by_country_product` | country × product × year |
+| `mart_trade_by_country` | country × year |
+| `mart_trade_by_product` | product × year |
 
 Data quality is enforced with dbt tests — `not_null`, `relationships`,
 `accepted_range`, and `unique_combination_of_columns` on each model's grain.
 Messy real-world issues are resolved in-model: reversing UTF-8 mojibake in country
 names, and handling country codes reused across border changes (Belgium/Luxembourg,
 West Germany, Sudan/South Sudan).
-<!-- confirm the country-name fixes are merged before publishing; otherwise delete the sentence above -->
 
 ## Dashboards
 
@@ -90,4 +89,4 @@ dbt profiles) are gitignored and never committed.
 
 ## Attribution
 
-Trade data © CEPII (BACI), used under CEPII's terms. Code: choose a license (MIT is common for portfolio repos).
+Trade data © CEPII (BACI), used under CEPII's terms. Code is released under the [MIT License](LICENSE).

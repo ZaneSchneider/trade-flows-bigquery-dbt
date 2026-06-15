@@ -4,17 +4,17 @@ from utils import run_query, MARTS
 st.set_page_config(page_title="Commodity Trade Balance", layout="wide")
 st.title("Commodity Trade Balance")
 st.caption("A country's commodities ranked by net balance (exports − imports) — "
-           "from mart_import_export_by_product_country, labelled via dim_product.")
+           "from mart_trade_by_country_product, labelled via dim_product.")
 
 countries = run_query(f"""
     select distinct iso3, country_name
-    from `{MARTS}.mart_import_export_by_country`
+    from `{MARTS}.mart_trade_by_country`
     order by country_name
 """)
 name_by_iso = dict(zip(countries.iso3, countries.country_name))
 iso_list = list(countries.iso3)
 
-years = run_query(f"select distinct year from `{MARTS}.mart_import_export_by_product_country` order by year")
+years = run_query(f"select distinct year from `{MARTS}.mart_trade_by_country_product` order by year")
 
 c1, c2 = st.columns(2)
 iso3 = c1.selectbox("Country", iso_list,
@@ -30,7 +30,7 @@ df = run_query(f"""
         coalesce(pc.import_value_thousands_usd, 0) as import_value_thousands_usd,
         coalesce(pc.export_value_thousands_usd, 0)
           - coalesce(pc.import_value_thousands_usd, 0) as trade_balance_thousands_usd
-    from `{MARTS}.mart_import_export_by_product_country` pc
+    from `{MARTS}.mart_trade_by_country_product` pc
     left join `{MARTS}.dim_product` p using (hs6_product_code)
     where pc.iso3 = '{iso3}' and pc.year = {year}
 """)

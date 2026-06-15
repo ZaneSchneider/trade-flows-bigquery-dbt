@@ -3,11 +3,11 @@ from utils import run_query, MARTS
 
 st.set_page_config(page_title="Top Traded Products", layout="wide")
 st.title("Top Traded Products")
-st.caption("World trade value by commodity (HS6) — from mart_global_export_by_product.")
+st.caption("World trade value by commodity (HS6) — from mart_trade_by_product.")
 
 df = run_query(f"""
     select hs6_product_code, year, product_description, trade_value_thousands_usd
-    from `{MARTS}.mart_global_export_by_product`
+    from `{MARTS}.mart_trade_by_product`
 """)
 
 year = st.slider("Year", int(df.year.min()), int(df.year.max()), int(df.year.max()))
