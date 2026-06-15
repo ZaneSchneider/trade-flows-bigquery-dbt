@@ -3,6 +3,8 @@
 End-to-end data pipeline that turns 30 years of raw bilateral trade records into a
 tested, queryable model of world trade — ingestion through dashboards.
 
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://trade-flows-bigquery-dbt.streamlit.app/)
+
 ```mermaid
 flowchart LR
   src["BACI HS92 panel<br/>CEPII · 1995–2024"]
