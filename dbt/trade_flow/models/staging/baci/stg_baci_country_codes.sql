@@ -7,7 +7,11 @@ source as (
 renamed as (
     select
         country_code,
-        country_name,
+        -- fix encoding that corrupts certain names
+        regexp_replace(
+            safe_convert_bytes_to_string(code_points_to_bytes(to_code_points(country_name))),
+            r'\s*\(\.\.\.\d{4}\)\s*$', ''
+        ) as country_name, 
         country_iso2 as iso2,
         country_iso3 as iso3
     from source

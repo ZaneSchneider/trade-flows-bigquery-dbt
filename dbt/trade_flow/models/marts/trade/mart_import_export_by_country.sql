@@ -5,7 +5,9 @@ country_product_year as (
 ),
 
 country_names as (
-    select iso3, any_value(country_name) as country_name
+    select
+        iso3,
+        array_agg(country_name order by length(country_name), country_name limit 1)[offset(0)] as country_name
     from {{ ref('dim_country') }}
     group by iso3
 ),
