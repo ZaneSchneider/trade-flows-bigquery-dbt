@@ -1,7 +1,7 @@
 # Global Trade Flow ELT Pipeline
 
 End-to-end data pipeline that turns 30 years of raw bilateral trade records into a
-tested, queryable model of world trade — ingestion through dashboards.
+tested, queryable model of world trade.
 
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://trade-flows-bigquery-dbt.streamlit.app/)
 
@@ -23,7 +23,7 @@ flowchart LR
 
 ## Overview
 
-Models global merchandise trade (1995–2024) so questions like *what does the world
+Models global merchandise trade (1995–2024) so that questions like *what does the world
 trade most, which countries run the largest surpluses and deficits, and in which
 commodities* can be answered against governed, tested marts instead of a raw
 ~270M-row table. Built to own every stage: ingestion, warehousing, transformation,
@@ -77,7 +77,7 @@ controls and render.
 - **Commodity Trade Balance** — a country's commodities ranked by net balance
 - **Top Traded Products** — most-traded commodities worldwide, with trend over time
 
-Run locally: [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://trade-flows-bigquery-dbt.streamlit.app/)
+Open in Streamlit: [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://trade-flows-bigquery-dbt.streamlit.app/)
 
 ## Roadmap
 
