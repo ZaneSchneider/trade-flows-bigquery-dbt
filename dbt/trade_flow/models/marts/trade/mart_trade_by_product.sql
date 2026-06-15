@@ -1,7 +1,7 @@
 with
 
 import_export_by_product_country as (
-    select * from {{ ref('mart_import_export_by_product_country') }}
+    select * from {{ ref('mart_trade_by_country_product') }}
 ),
 
 products as (

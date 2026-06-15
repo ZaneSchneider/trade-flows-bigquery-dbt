@@ -1,5 +1,5 @@
 models:
-  - name: mart_import_export_by_product_country
+  - name: mart_trade_by_country_product
     description: >
       Country × product × year specialization base. Grain = one row per
       (iso3, hs6_product_code, year). Exports are aggregated by exporter and
@@ -44,7 +44,7 @@ models:
             combination_of_columns: [iso3, hs6_product_code, year]
 
 
-  - name: mart_import_export_by_country
+  - name: mart_trade_by_country
     description: >
       Canonical country fact. Grain = one row per (iso3, year). Rolled up from
       mart_country_product_year by summing exports and imports across all
@@ -91,7 +91,7 @@ models:
             combination_of_columns: [iso3, year]
 
 
-  - name: mart_global_export_by_product
+  - name: mart_trade_by_product
     description: >
       World product fact. Grain = one row per (hs6_product_code, year). Rolled up
       from mart_import_export_by_product_country by summing across all countries.
