@@ -1,4 +1,4 @@
-# Global Trade Flow Analysis
+# Global Trade Flow ELT Pipeline
 
 End-to-end data pipeline that turns 30 years of raw bilateral trade records into a
 tested, queryable model of world trade — ingestion through dashboards.
