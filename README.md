@@ -77,7 +77,7 @@ controls and render.
 - **Commodity Trade Balance** — a country's commodities ranked by net balance
 - **Top Traded Products** — most-traded commodities worldwide, with trend over time
 
-Run locally: `streamlit run dashboard/Home.py`
+Run locally: [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://trade-flows-bigquery-dbt.streamlit.app/)
 
 ## Roadmap
 
