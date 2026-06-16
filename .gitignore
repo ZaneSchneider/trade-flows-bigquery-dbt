@@ -30,6 +30,7 @@ logs/
 **/.terraform/
 *.tfstate
 *.tfstate.*
+*.tfvars
 crash.log
 
 # === Airflow ===
