@@ -1,5 +1,6 @@
 import streamlit as st
 from utils import run_query, MARTS
+import altair as alt
 
 st.set_page_config(page_title="Commodity Trade Balance", layout="wide")
 st.title("Commodity Trade Balance")
@@ -35,9 +36,24 @@ df = run_query(f"""
     where pc.iso3 = '{iso3}' and pc.year = {year}
 """)
 
-top = df.reindex(df.trade_balance_thousands_usd.abs().sort_values(ascending=False).index).head(20)
+top = (df.reindex(df.trade_balance_thousands_usd.abs().sort_values(ascending=False).index)
+         .head(20)
+         .sort_values("trade_balance_thousands_usd", ascending=False))
 top = top.assign(label=top.hs6_product_code + "  " + top.product_description.fillna(""))
 
 st.subheader(f"{name_by_iso[iso3]} — 20 largest commodity surpluses / deficits, {year}")
-st.bar_chart(top.set_index("label")["trade_balance_thousands_usd"])
-st.dataframe(df.sort_values("trade_balance_thousands_usd"), use_container_width=True)
+st.altair_chart(
+    alt.Chart(top).mark_bar().encode(
+        y=alt.Y("label:N", sort="-x", title=None),
+        x=alt.X("trade_balance_thousands_usd:Q", title="Trade balance (USD thousands)"),
+    ),
+    use_container_width=True,
+)
+NICE = {
+    "hs6_product_code": "HS6",
+    "product_description": "Product",
+    "export_value_thousands_usd": "Exports (USD thousands)",
+    "import_value_thousands_usd": "Imports (USD thousands)",
+    "trade_balance_thousands_usd": "Trade Balance (USD thousands)",
+}
+st.dataframe(df.sort_values("trade_balance_thousands_usd").rename(columns=NICE), use_container_width=True)

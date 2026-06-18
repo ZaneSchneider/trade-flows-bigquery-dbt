@@ -1,5 +1,6 @@
 import streamlit as st
 from utils import run_query, MARTS
+import altair as alt
 
 st.set_page_config(page_title="Top Traded Products", layout="wide")
 st.title("Top Traded Products")
@@ -14,10 +15,20 @@ year = st.slider("Year", int(df.year.min()), int(df.year.max()), int(df.year.max
 view = df[df.year == year].nlargest(25, "trade_value_thousands_usd")
 view = view.assign(label=view.hs6_product_code + "  " + view.product_description.fillna(""))
 
-st.subheader(f"25 most-traded commodities worldwide, {year}")
-st.bar_chart(view.set_index("label")["trade_value_thousands_usd"])
+st.altair_chart(
+    alt.Chart(view).mark_bar().encode(
+        y=alt.Y("label:N", sort="-x", title=None),
+        x=alt.X("trade_value_thousands_usd:Q", title="Trade value (USD thousands)"),
+    ),
+    use_container_width=True,
+)
+NICE = {
+    "hs6_product_code": "HS6",
+    "product_description": "Product",
+    "trade_value_thousands_usd": "Trade Value (USD thousands)",
+}
 st.dataframe(
-    view[["hs6_product_code", "product_description", "trade_value_thousands_usd"]],
+    view[["hs6_product_code", "product_description", "trade_value_thousands_usd"]].rename(columns=NICE),
     use_container_width=True,
 )
 
@@ -30,4 +41,4 @@ code = st.selectbox("Commodity", code_list,
                     index=code_list.index(top_code),
                     format_func=lambda c: f"{c}  {name_by_code[c]}")
 trend = df[df.hs6_product_code == code].sort_values("year")
-st.line_chart(trend.set_index("year")["trade_value_thousands_usd"])
+st.line_chart(trend.assign(year=trend.year.astype(str)).set_index("year")["trade_value_thousands_usd"])

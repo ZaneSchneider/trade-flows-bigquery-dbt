@@ -1,8 +1,8 @@
 import streamlit as st
 from utils import run_query, MARTS
 
-st.set_page_config(page_title="Trade Flow V2", layout="wide")
-st.title("Trade Flow — V2")
+st.set_page_config(page_title="Global Trade Flow ELT Pipeline", layout="wide")
+st.title("Global Trade Flow ELT Pipeline")
 st.caption("BACI HS92 bilateral trade · GCS → BigQuery → dbt · self-engineered pipeline")
 st.markdown("Descriptive views over a self-built pipeline. Use the sidebar pages.")
 

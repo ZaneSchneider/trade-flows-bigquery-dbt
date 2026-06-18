@@ -11,10 +11,12 @@ CAP_BYTES = 2 * 1024**3  # 2 GiB ceiling per query
 @st.cache_resource
 def get_client():
     """One shared BigQuery client. st.secrets on Cloud, local key file otherwise."""
-    if "gcp_service_account" in st.secrets:
-        creds = service_account.Credentials.from_service_account_info(
-            st.secrets["gcp_service_account"]
-        )
+    try:
+        info = st.secrets["gcp_service_account"]   # set on Streamlit Cloud
+    except Exception:
+        info = None                                # no secrets.toml locally
+    if info is not None:
+        creds = service_account.Credentials.from_service_account_info(info)
     else:
         creds = service_account.Credentials.from_service_account_file(str(KEYFILE))
     return bigquery.Client(credentials=creds, project=PROJECT)
