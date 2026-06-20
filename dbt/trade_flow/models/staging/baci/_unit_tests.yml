@@ -1,0 +1,17 @@
+unit_tests:
+  - name: stg_baci_country_codes_cleans_names
+    description: >
+      country_name is repaired: Latin-1/UTF-8 mojibake is round-tripped back to
+      proper UTF-8, and a trailing " (...YYYY)" historical-year suffix is stripped.
+    model: stg_baci_country_codes
+    given:
+      - input: source('trade_flow_v2_raw', 'baci_country_codes')
+        rows:
+          - {country_code: 384, country_name: "CÃ´te d'Ivoire", country_iso2: 'CI', country_iso3: 'CIV'}
+          - {country_code: 729, country_name: 'Sudan (...2011)', country_iso2: 'SD', country_iso3: 'SDN'}
+          - {country_code: 276, country_name: 'Germany',          country_iso2: 'DE', country_iso3: 'DEU'}
+    expect:
+      rows:
+        - {country_code: 384, country_name: "Côte d'Ivoire", iso2: 'CI', iso3: 'CIV'}
+        - {country_code: 729, country_name: 'Sudan',          iso2: 'SD', iso3: 'SDN'}
+        - {country_code: 276, country_name: 'Germany',        iso2: 'DE', iso3: 'DEU'}
