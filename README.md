@@ -63,10 +63,15 @@ marts rolled up from it.
 | `mart_trade_by_product` | product × year |
 
 Data quality is enforced with dbt tests — `not_null`, `relationships`,
-`accepted_range`, and `unique_combination_of_columns` on each model's grain.
+`accepted_range`, and `unique_combination_of_columns` on each model's declared grain.
 Messy real-world issues are resolved in-model: reversing UTF-8 mojibake in country
-names, and handling country codes reused across border changes (Belgium/Luxembourg,
-West Germany, Sudan/South Sudan).
+names, and keying the trade fact on BACI's numeric `country_code` (the dimension's
+true unique key) rather than `iso3`, which is non-unique because historical entities
+share an ISO3 with their modern successor — Belgium-Luxembourg with Belgium (`BEL`),
+the former Federal Republic of Germany with Germany (`DEU`), and the pre-2011 and
+current Republic of Sudan (both `SDN`, both even labelled "Sudan"). ISO3 is carried
+as a descriptive attribute and resolved through `dim_country`, so the fact's grain
+stays honest and joins can't fan out.
 
 ## Dashboards
 
