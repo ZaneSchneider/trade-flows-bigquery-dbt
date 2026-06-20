@@ -1,5 +1,8 @@
 models:
   - name: dim_country
+    config:
+      contract:
+        enforced: true
     description: >
       Country dimension. Grain = one row per BACI numeric country_code.
       ISO3 is NOT unique: historical entities (Belgium-Luxembourg, FRG,
@@ -8,74 +11,109 @@ models:
     columns:
 
       - name: country_code
+        data_type: int64
         description: BACI numeric country code; the join key used by fct_trade.
+        constraints:
+          - type: not_null
         tests:
-          - not_null
           - unique
 
-      - name: iso3
-        tests:
-          - not_null
-
       - name: country_name
+        data_type: string
+
+      - name: iso3
+        data_type: string
+        constraints:
+          - type: not_null
 
       - name: iso2
+        data_type: string
 
 
   - name: dim_product
+    config:
+      contract:
+        enforced: true
     description: Product dimension. Grain = one row per HS6 product code.
     columns:
 
       - name: hs6_product_code
+        data_type: string
+        constraints:
+          - type: not_null
         tests:
-          - not_null
           - unique
 
       - name: product_description
+        data_type: string
+
+      - name: hs2
+        data_type: string
+
+      - name: hs4
+        data_type: string
+
+      - name: chapter_description
+        data_type: string
+
+      - name: hs_section
+        data_type: int64
+
+      - name: section_description
+        data_type: string
 
 
   - name: fct_trade
+    config:
+      contract:
+        enforced: true
     description: >
       Trade fact. Grain = one row per (year, exporter, importer, HS6 product).
       Exporter/importer are BACI numeric country_code FKs to dim_country;
       ISO3 and country names are resolved downstream via dim_country.
     columns:
-
       - name: year
-
+        data_type: int64
+        constraints:
+          - type: not_null
       - name: exporter_country_code
+        data_type: int64
         description: Exporter BACI numeric country code; FK to dim_country.
+        constraints:
+          - type: not_null
         tests:
-          - not_null
           - relationships:
               arguments:
                 to: ref('dim_country')
                 field: country_code
-
       - name: importer_country_code
+        data_type: int64
         description: Importer BACI numeric country code; FK to dim_country.
+        constraints:
+          - type: not_null
         tests:
-          - not_null
           - relationships:
               arguments:
                 to: ref('dim_country')
                 field: country_code
-
       - name: hs6_product_code
+        data_type: string
+        constraints:
+          - type: not_null
         tests:
-          - not_null
           - relationships:
               arguments:
                 to: ref('dim_product')
                 field: hs6_product_code
-
       - name: trade_value_thousands_usd
+        data_type: float64
+        constraints:
+          - type: not_null
         tests:
-          - not_null
           - dbt_utils.accepted_range:
               arguments: {min_value: 0, inclusive: false}
-
       - name: trade_quantity_metric_tons
+        data_type: float64
         description: Trade quantity in metric tons; nullable (BACI omits many quantities).
     tests:
       - dbt_utils.unique_combination_of_columns:
