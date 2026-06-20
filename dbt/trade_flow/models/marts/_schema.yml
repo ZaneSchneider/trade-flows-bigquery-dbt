@@ -37,26 +37,29 @@ models:
   - name: fct_trade
     description: >
       Trade fact. Grain = one row per (year, exporter, importer, HS6 product).
-      Exporter/importer ISO3 are resolved from BACI numeric codes via dim_country.
+      Exporter/importer are BACI numeric country_code FKs to dim_country;
+      ISO3 and country names are resolved downstream via dim_country.
     columns:
 
       - name: year
 
-      - name: exporter_iso3
-        description: Exporter ISO3, resolved from the numeric code via dim_country.
+      - name: exporter_country_code
+        description: Exporter BACI numeric country code; FK to dim_country.
         tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('dim_country')
-                field: iso3
+                field: country_code
 
-      - name: importer_iso3
-        description: Importer ISO3, resolved from the numeric code via dim_country.
+      - name: importer_country_code
+        description: Importer BACI numeric country code; FK to dim_country.
         tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('dim_country')
-                field: iso3
+                field: country_code
 
       - name: hs6_product_code
         tests:
@@ -77,4 +80,4 @@ models:
     tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
-            combination_of_columns: [year, exporter_iso3, importer_iso3, hs6_product_code]
+            combination_of_columns: [year, exporter_country_code, importer_country_code, hs6_product_code]

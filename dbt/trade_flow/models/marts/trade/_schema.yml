@@ -2,18 +2,18 @@ models:
   - name: mart_trade_by_country_product
     description: >
       Country × product × year specialization base. Grain = one row per
-      (iso3, hs6_product_code, year). Exports are aggregated by exporter and
-      imports by importer from fct_trade, then full-outer-joined, so a country
+      (country_code, hs6_product_code, year). Exports are aggregated by exporter
+      and imports by importer from fct_trade, then full-outer-joined, so a country
       appears for a product even when it only trades it on one side. Feeds the
       downstream analytical marts.
     columns:
 
-      - name: iso3
-        description: Country ISO3 (resolved upstream in fct_trade via dim_country).
+      - name: country_code
+        description: BACI numeric country code (FK to dim_country; the true unique key).
         tests:
           - not_null
           - relationships:
-              arguments: {to: ref('dim_country'), field: iso3}
+              arguments: {to: ref('dim_country'), field: country_code}
 
       - name: hs6_product_code
         description: HS6 product code.
@@ -41,23 +41,28 @@ models:
     tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
-            combination_of_columns: [iso3, hs6_product_code, year]
+            combination_of_columns: [country_code, hs6_product_code, year]
 
 
   - name: mart_trade_by_country
     description: >
-      Canonical country fact. Grain = one row per (iso3, year). Rolled up from
-      mart_country_product_year by summing exports and imports across all
+      Canonical country fact. Grain = one row per (country_code, year). Rolled up
+      from mart_trade_by_country_product by summing exports and imports across all
       products (additive measures, so the re-aggregation is valid). Partner and
-      product are both collapsed; quantity is intentionally dropped.
+      product are both collapsed; quantity is intentionally dropped. ISO3 and name
+      are decorated 1:1 from dim_country on country_code.
     columns:
 
-      - name: iso3
-        description: Country ISO3.
+      - name: country_code
+        description: BACI numeric country code (FK to dim_country; the true unique key).
         tests:
           - not_null
           - relationships:
-              arguments: {to: ref('dim_country'), field: iso3}
+              arguments: {to: ref('dim_country'), field: country_code}
+
+      - name: iso3
+        description: Country ISO3 label (non-unique across historical entities; not the key).
+        tests: [not_null]
 
       - name: year
         description: Trade year.
@@ -82,13 +87,13 @@ models:
         tests: [not_null]
 
       - name: country_name
-        description: Country name, deduped to one per iso3 from dim_country.
+        description: Country name from dim_country (1:1 on country_code).
         tests: [not_null]
 
     tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
-            combination_of_columns: [iso3, year]
+            combination_of_columns: [country_code, year]
 
 
   - name: mart_trade_by_product
@@ -124,7 +129,7 @@ models:
 
       - name: trade_quantity_metric_tons
         description: World quantity (metric tons); nullable and partial — BACI omits quantity on many flows.
-        
+
     tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

@@ -1,6 +1,6 @@
 import streamlit as st
-from utils import run_query, MARTS
 import altair as alt
+from utils import run_query, MARTS
 
 st.set_page_config(page_title="Commodity Trade Balance", layout="wide")
 st.title("Commodity Trade Balance")
@@ -8,19 +8,21 @@ st.caption("A country's commodities ranked by net balance (exports − imports) 
            "from mart_trade_by_country_product, labelled via dim_product.")
 
 countries = run_query(f"""
-    select distinct iso3, country_name
+    select distinct country_code, iso3, country_name
     from `{MARTS}.mart_trade_by_country`
     order by country_name
 """)
-name_by_iso = dict(zip(countries.iso3, countries.country_name))
-iso_list = list(countries.iso3)
+name_by_code = dict(zip(countries.country_code, countries.country_name))
+code_list = list(countries.country_code)
+usa = countries.loc[countries.iso3 == "USA", "country_code"]
+default_index = code_list.index(usa.iloc[0]) if len(usa) else 0
 
 years = run_query(f"select distinct year from `{MARTS}.mart_trade_by_country_product` order by year")
 
 c1, c2 = st.columns(2)
-iso3 = c1.selectbox("Country", iso_list,
-                    index=iso_list.index("USA") if "USA" in iso_list else 0,
-                    format_func=lambda c: name_by_iso[c])
+code = c1.selectbox("Country", code_list,
+                    index=default_index,
+                    format_func=lambda c: name_by_code[c])
 year = c2.slider("Year", int(years.year.min()), int(years.year.max()), int(years.year.max()))
 
 df = run_query(f"""
@@ -33,15 +35,14 @@ df = run_query(f"""
           - coalesce(pc.import_value_thousands_usd, 0) as trade_balance_thousands_usd
     from `{MARTS}.mart_trade_by_country_product` pc
     left join `{MARTS}.dim_product` p using (hs6_product_code)
-    where pc.iso3 = '{iso3}' and pc.year = {year}
+    where pc.country_code = {code} and pc.year = {year}
 """)
 
 top = (df.reindex(df.trade_balance_thousands_usd.abs().sort_values(ascending=False).index)
-         .head(20)
-         .sort_values("trade_balance_thousands_usd", ascending=False))
+         .head(20))
 top = top.assign(label=top.hs6_product_code + "  " + top.product_description.fillna(""))
 
-st.subheader(f"{name_by_iso[iso3]} — 20 largest commodity surpluses / deficits, {year}")
+st.subheader(f"{name_by_code[code]} — 20 largest commodity surpluses / deficits, {year}")
 st.altair_chart(
     alt.Chart(top).mark_bar().encode(
         y=alt.Y("label:N", sort="-x", title=None),
