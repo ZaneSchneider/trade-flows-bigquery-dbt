@@ -1,0 +1,18 @@
+# Place this at:  dbt/trade_flow/ci/profiles.yml   (rename to profiles.yml)
+#
+# CI-only connection profile. It is committed to the repo ON PURPOSE — it holds NO
+# secrets. Credentials come from Application Default Credentials, which the
+# google-github-actions/auth step provides at runtime via Workload Identity Federation.
+trade_flow_v2:                 # must match `profile:` in dbt_project.yml
+  target: ci
+  outputs:
+    ci:
+      type: bigquery
+      method: oauth            # use ADC from the auth step — no key file anywhere
+      project: trade-flow-analysis
+      dataset: dbt_ci          # throwaway CI sandbox (becomes dbt_ci_staging / dbt_ci_marts via your +schema config)
+      location: us-west1             # CHANGE this if your BigQuery datasets live elsewhere (EU, us-central1, ...)
+      threads: 8
+      priority: interactive
+      job_execution_timeout_seconds: 600
+      job_retries: 1

@@ -1,0 +1,102 @@
+# .github/workflows/ci.yml
+#
+# WHAT THIS DOES (the purpose)
+# Every pull request that touches the dbt project runs this workflow. GitHub spins
+# up a fresh Ubuntu VM ("runner"), authenticates to BigQuery WITHOUT any long-lived
+# key (GitHub OIDC -> Google Workload Identity Federation), installs dbt, then
+# builds + tests your models into a throwaway CI dataset. If anything fails to
+# compile, breaks a unit test, or violates a model contract, the PR goes red and
+# can't be merged. That's the entire point: catch broken dbt changes BEFORE they
+# reach production. (To map each block below to a concept, read GitHub's
+# "Understanding GitHub Actions" — link is in the chat message.)
+#
+# ONE-TIME SETUP YOU MUST DO FIRST (gcloud commands are in the chat message):
+#   1. Create a Workload Identity Federation pool + provider, restricted to THIS repo.
+#   2. Create a CI service account with, at minimum (project level):
+#        roles/bigquery.jobUser     (run queries)
+#        roles/bigquery.dataEditor  (create the CI datasets + read your raw tables)
+#   3. Add two repo Variables (Settings > Secrets and variables > Actions > Variables):
+#        GCP_WIF_PROVIDER       = projects/<NUMBER>/locations/global/workloadIdentityPools/github/providers/<provider>
+#        GCP_CI_SERVICE_ACCOUNT = dbt-ci@trade-flow-analysis.iam.gserviceaccount.com
+#      Neither is secret, so Variables (not Secrets) is the correct home.
+
+name: dbt CI
+
+# --- Events: when this runs ---
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "dbt/**"                       # only when the dbt project changes
+      - ".github/workflows/ci.yml"
+  workflow_dispatch:                   # also runnable by hand from the Actions tab
+
+# If you push again to the same PR, cancel the in-flight run (saves CI minutes + BigQuery $).
+concurrency:
+  group: dbt-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# OIDC requires id-token: write. Everything else stays read-only.
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  # dbt reads its connection settings from this profiles.yml (committed; contains NO secrets).
+  DBT_PROFILES_DIR: ${{ github.workspace }}/dbt/trade_flow/ci
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # Run every step inside the dbt project so dbt finds dbt_project.yml.
+    defaults:
+      run:
+        working-directory: dbt/trade_flow
+
+    steps:
+      # 1. Get your code onto the runner. MUST come before the auth step.
+      - name: Check out repo
+        uses: actions/checkout@v5
+
+      # 2. Python toolchain for dbt.
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      # 3. Install dbt. Pin the version to match your local `dbt --version`
+      #    for reproducible CI, e.g.  pip install dbt-bigquery==1.9.4
+      - name: Install dbt
+        run: pip install dbt-bigquery==1.11.1
+
+      # 4. Authenticate to Google Cloud via Workload Identity Federation.
+      #    No key file: GitHub mints a short-lived OIDC token, GCP trades it for a
+      #    short-lived credential, and the action exports it as Application Default
+      #    Credentials so dbt picks it up automatically (profiles.yml -> method: oauth).
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: trade-flow-analysis
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_CI_SERVICE_ACCOUNT }}
+
+      # 5. Install dbt packages (dbt_utils, etc.) declared in packages.yml.
+      - name: dbt deps
+        run: dbt deps
+
+      # 6. Unit tests run on MOCKED inputs, so they scan ~no warehouse data.
+      #    Fast, cheap, and they prove your transform logic (e.g. the mojibake fix).
+      # Load seeds first so any model that ref()s them resolves in the empty build.
+      - name: dbt seed
+        run: dbt seed
+
+      # Empty-build the models: creates the CI schemas and validates compile + refs +
+      # contracts at ~zero bytes. No unit tests here — the --empty flag zeroes their
+      # mock fixtures and would fail them (dbt-core issue #10516).
+      - name: dbt run (empty)
+        run: dbt run --empty
+
+      # Schemas now exist, so unit tests run on full mocked inputs (no --empty).
+      - name: dbt unit tests
+        run: dbt test --select test_type:unit
