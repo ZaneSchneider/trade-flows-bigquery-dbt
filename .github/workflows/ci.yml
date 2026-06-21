@@ -87,15 +87,16 @@ jobs:
 
       # 6. Unit tests run on MOCKED inputs, so they scan ~no warehouse data.
       #    Fast, cheap, and they prove your transform logic (e.g. the mojibake fix).
+      # Load seeds first so any model that ref()s them resolves in the empty build.
+      - name: dbt seed
+        run: dbt seed
+
+      # Empty-build the models: creates the CI schemas and validates compile + refs +
+      # contracts at ~zero bytes. No unit tests here — the --empty flag zeroes their
+      # mock fixtures and would fail them (dbt-core issue #10516).
+      - name: dbt run (empty)
+        run: dbt run --empty
+
+      # Schemas now exist, so unit tests run on full mocked inputs (no --empty).
       - name: dbt unit tests
         run: dbt test --select test_type:unit
-
-      # 7. Build everything with --empty: dbt creates each model with LIMIT 0.
-      #    Validates that the project compiles, every ref/source resolves, and every
-      #    enforced model contract (column names + types) holds — at ~zero bytes billed.
-      #    NOTE: because the tables are empty, this does NOT meaningfully exercise your
-      #    DATA tests (relationships, uniqueness). For real data-quality CI later,
-      #    upgrade to slim CI: store a prod manifest as an artifact and run
-      #      dbt build --select state:modified+ --defer --state <path-to-prod-manifest>
-      - name: dbt build (empty)
-        run: dbt build --empty
