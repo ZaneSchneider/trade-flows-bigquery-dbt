@@ -26,10 +26,7 @@ name: dbt CI
 on:
   pull_request:
     branches: [main]
-    paths:
-      - "dbt/**"                       # only when the dbt project changes
-      - ".github/workflows/ci.yml"
-  workflow_dispatch:                   # also runnable by hand from the Actions tab
+  workflow_dispatch:
 
 # If you push again to the same PR, cancel the in-flight run (saves CI minutes + BigQuery $).
 concurrency:
