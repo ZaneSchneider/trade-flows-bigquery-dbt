@@ -5,6 +5,8 @@ tested, queryable model of world trade.
 
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://trade-flows-bigquery-dbt.streamlit.app/)
 
+[![dbt CI](https://github.com/ZaneSchneider/trade-flows-bigquery-dbt/actions/workflows/ci.yml/badge.svg)](https://github.com/ZaneSchneider/trade-flows-bigquery-dbt/actions/workflows/ci.yml)
+
 ```mermaid
 flowchart LR
   src["BACI HS92 panel<br/>CEPII · 1995–2024"]
@@ -19,6 +21,7 @@ flowchart LR
   air -. orchestrates .-> marts
   tf(["Terraform · IaC"]) -. provisions .-> gcs
   tf -. provisions .-> bq
+  ci(["GitHub Actions CI<br/>keyless OIDC · tests PRs"]) -. validates .-> marts
 ```
 
 ## Overview
@@ -48,6 +51,7 @@ the cleaned, reconciled version of UN Comtrade bilateral trade flows (release V2
 | Orchestration | Apache Airflow |
 | Infrastructure | Terraform |
 | Dashboards | Streamlit |
+| CI/CD | GitHub Actions (keyless OIDC → BigQuery) |
 
 ## Data modeling
 
@@ -84,10 +88,24 @@ controls and render.
 
 Open in Streamlit: [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://trade-flows-bigquery-dbt.streamlit.app/)
 
+## Continuous integration
+
+Every pull request to `main` runs a GitHub Actions workflow that builds and tests the
+dbt project against BigQuery, so broken changes can't merge. The runner authenticates
+to Google Cloud with **no long-lived key**: GitHub issues a short-lived OIDC token,
+Workload Identity Federation exchanges it for temporary credentials scoped to this
+repository, and a least-privilege service account (`bigquery.jobUser` +
+`bigquery.dataEditor`) runs the build.
+
+To keep CI fast and nearly free, models are built with `dbt run --empty` (zero rows) —
+enough to validate that the project compiles, every `ref`/`source` resolves, and every
+model contract holds — and unit tests then run on mocked inputs. The CI build is
+isolated in its own `dbt_ci` dataset.
+
 ## Roadmap
 
 - Quantities and unit values (price per metric ton)
-- Price-penalty analysis — where exporters sell the same commodity for systematically less *(refine once built)*
+- Price-penalty analysis — where exporters sell the same commodity for systematically less
 
 ## Notes
 
